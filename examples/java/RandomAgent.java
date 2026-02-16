@@ -85,31 +85,36 @@ public class RandomAgent {
      * Main function - this is all you need!
      */
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        
         try {
-            // Read the board state (one line)
-            String line = scanner.nextLine();
+            // Use BufferedReader for better subprocess compatibility
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(System.in)
+            );
             
-            // Parse it
-            Object[] parsed = parseBoard(line);
-            int size = (int) parsed[0];
-            String myColor = (String) parsed[1];
-            @SuppressWarnings("unchecked")
-            Map<String, String> board = (Map<String, String>) parsed[2];
+            // Loop version - handles multiple moves
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Parse it
+                Object[] parsed = parseBoard(line);
+                int size = (int) parsed[0];
+                String myColor = (String) parsed[1];
+                @SuppressWarnings("unchecked")
+                Map<String, String> board = (Map<String, String>) parsed[2];
+                
+                // Choose your move
+                int[] move = chooseMove(size, myColor, board);
+                
+                // Output your move (don't forget to flush!)
+                System.out.println(move[0] + " " + move[1]);
+                System.out.flush();
+            }
             
-            // Choose your move
-            int[] move = chooseMove(size, myColor, board);
-            
-            // Output your move (don't forget to flush!)
-            System.out.println(move[0] + " " + move[1]);
-            System.out.flush();
+            reader.close();
             
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            System.err.println("[ERROR] Exception occurred: " + e.getMessage());
             e.printStackTrace(System.err);
-        } finally {
-            scanner.close();
+            System.exit(1);
         }
     }
 }

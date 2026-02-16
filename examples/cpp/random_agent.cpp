@@ -104,22 +104,22 @@ int main() {
     srand(time(nullptr));
     
     try {
-        // Read the board state (one line)
+        // Loop version - handles multiple moves
         string line;
-        getline(cin, line);
-        
-        // Parse it
-        int size;
-        string myColor;
-        map<pair<int, int>, char> board;
-        tie(size, myColor, board) = parseBoard(line);
-        
-        // Choose your move
-        pair<int, int> move = chooseMove(size, myColor, board);
-        
-        // Output your move (don't forget to flush!)
-        cout << move.first << " " << move.second << endl;
-        cout.flush();
+        while (getline(cin, line)) {
+            // Parse it
+            int size;
+            string myColor;
+            map<pair<int, int>, char> board;
+            tie(size, myColor, board) = parseBoard(line);
+            
+            // Choose your move
+            pair<int, int> move = chooseMove(size, myColor, board);
+            
+            // Output your move (don't forget to flush!)
+            cout << move.first << " " << move.second << endl;
+            cout.flush();
+        }
         
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << endl;

@@ -112,6 +112,9 @@ class SubprocessPlayer(Player):
         """
         # Check if process is alive
         if self._is_dead():
+            stderr_output = self._get_stderr()
+            if stderr_output:
+                print(f"Process died. stderr output:\n{stderr_output}")
             return None
 
         try:
@@ -124,6 +127,10 @@ class SubprocessPlayer(Player):
 
             # Check if process died during write
             if self._is_dead():
+                stderr_output = self._get_stderr()
+                if stderr_output:
+                    print(
+                        f"Process died after sending input. stderr output:\n{stderr_output}")
                 return None
 
             # Read response with timeout
@@ -131,6 +138,10 @@ class SubprocessPlayer(Player):
 
             if response is None:
                 # Timeout or EOF
+                stderr_output = self._get_stderr()
+                if stderr_output:
+                    print(
+                        f"No response from {self.name}. stderr output:\n{stderr_output}")
                 return None
 
             # Parse move
@@ -140,14 +151,24 @@ class SubprocessPlayer(Player):
             except ProtocolError as e:
                 # Invalid format
                 print(f"Protocol error from {self.name}: {e}")
+                stderr_output = self._get_stderr()
+                if stderr_output:
+                    print(f"stderr output:\n{stderr_output}")
                 return None
 
         except (IOError, BrokenPipeError, ValueError) as e:
             # Pipe broken - process likely crashed
+            stderr_output = self._get_stderr()
+            if stderr_output:
+                print(
+                    f"Pipe error from {self.name}. stderr output:\n{stderr_output}")
             return None
         except Exception as e:
             # Unexpected error
             print(f"Unexpected error from {self.name}: {e}")
+            stderr_output = self._get_stderr()
+            if stderr_output:
+                print(f"stderr output:\n{stderr_output}")
             return None
 
     def cleanup(self):
