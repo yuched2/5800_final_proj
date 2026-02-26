@@ -68,6 +68,9 @@ class SubprocessPlayer(Player):
         self.current_memory_mb = 0.0
         self.peak_memory_mb = 0.0
 
+        # Error tracking for detailed logging
+        self.last_error_reason = None
+
     def initialize(self, board_size: int) -> bool:
         """
         Start the subprocess.
@@ -118,6 +121,9 @@ class SubprocessPlayer(Player):
         Returns:
             (row, col) tuple for normal move, "swap" for swap move, or None if subprocess fails/forfeits
         """
+        # Clear previous error reason
+        self.last_error_reason = None
+
         # Check if process is alive
         if self._is_dead():
             stderr_output = self._get_stderr()
@@ -252,8 +258,9 @@ class SubprocessPlayer(Player):
             return False
 
         if self.current_memory_mb > self.memory_limit_mb:
-            print(
-                f"{self.name} exceeded memory limit ({self.current_memory_mb:.2f} MB > {self.memory_limit_mb:.2f} MB), terminating process...")
+            error_msg = f"exceeded memory limit ({self.current_memory_mb:.2f} MB > {self.memory_limit_mb:.2f} MB)"
+            self.last_error_reason = error_msg
+            print(f"{self.name} {error_msg}, terminating process...")
             try:
                 self.process.kill()
                 self.process.wait(timeout=1.0)
@@ -294,8 +301,9 @@ class SubprocessPlayer(Player):
 
         if thread.is_alive():
             # Timeout exceeded - kill the subprocess
-            print(
-                f"{self.name} exceeded timeout ({timeout}s), terminating process...")
+            error_msg = f"exceeded timeout ({timeout}s)"
+            self.last_error_reason = error_msg
+            print(f"{self.name} {error_msg}, terminating process...")
             try:
                 self.process.kill()
                 self.process.wait(timeout=1.0)

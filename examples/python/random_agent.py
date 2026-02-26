@@ -92,7 +92,7 @@ def main():
             row, col = choose_move(size, my_color, board)
 
             # # test timeout
-            # time.sleep(7)
+            time.sleep(7)
 
             # Output your move
             print(f"{row} {col}")

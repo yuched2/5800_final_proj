@@ -42,7 +42,7 @@ class GameController:
 
     # Configuration
     MAX_INVALID_MOVES = 3  # Max retries per turn
-    MAX_TOTAL_ERRORS = 10  # Max total errors per player before forfeit
+    MAX_TOTAL_ERRORS = 3  # Max total errors per player before forfeit
 
     def __init__(self, board_size: int = DEFAULT_BOARD_SIZE):
         """
@@ -213,8 +213,14 @@ class GameController:
                 return None
 
             if move is None:
-                self.log_event(LogLevel.ERROR,
-                               f"{player.name} returned None (forfeit)")
+                # Check if subprocess player has a specific error reason
+                from players.subprocess_player import SubprocessPlayer
+                if isinstance(player, SubprocessPlayer) and player.last_error_reason:
+                    self.log_event(LogLevel.ERROR,
+                                   f"{player.name} {player.last_error_reason}")
+                else:
+                    self.log_event(LogLevel.ERROR,
+                                   f"{player.name} returned None (forfeit)")
                 return None
 
             # Check if it's a swap move
