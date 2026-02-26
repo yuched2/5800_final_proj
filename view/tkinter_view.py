@@ -117,7 +117,7 @@ class HexBoardCanvas:
 
                 # Add coordinate label
                 text_color = '#666666' if cell_color == Color.EMPTY else '#000000'
-                self.canvas.create_text(
+                text_id = self.canvas.create_text(
                     x, y,
                     text=f"{row},{col}",
                     font=('Arial', 8),
@@ -125,14 +125,20 @@ class HexBoardCanvas:
                     tags=['label']
                 )
 
-                # Bind click event
+                # Bind click event to both hex and text
                 if click_callback:
                     self.canvas.tag_bind(hex_id, '<Button-1>',
+                                         lambda e, r=row, c=col: click_callback(r, c))
+                    self.canvas.tag_bind(text_id, '<Button-1>',
                                          lambda e, r=row, c=col: click_callback(r, c))
                     # Hover effects
                     self.canvas.tag_bind(hex_id, '<Enter>',
                                          lambda e, r=row, c=col: self.on_hover(r, c, board))
                     self.canvas.tag_bind(hex_id, '<Leave>',
+                                         lambda e, r=row, c=col: self.on_leave(r, c, board))
+                    self.canvas.tag_bind(text_id, '<Enter>',
+                                         lambda e, r=row, c=col: self.on_hover(r, c, board))
+                    self.canvas.tag_bind(text_id, '<Leave>',
                                          lambda e, r=row, c=col: self.on_leave(r, c, board))
 
         # Draw edge labels
@@ -278,7 +284,7 @@ class TkinterView:
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=3)
+        main_frame.columnconfigure(0, weight=6)
         main_frame.columnconfigure(1, weight=1)
         # Row 2 contains the board and should expand
         main_frame.rowconfigure(2, weight=1)
@@ -331,7 +337,7 @@ class TkinterView:
             info_frame,
             text="Turn: 0",
             font=('Arial', 11, 'bold'),
-            width=40  # Fixed width to prevent shifting when text changes
+            width=30  # Fixed width to prevent shifting when text changes
         )
         self.turn_label.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=5)
 
@@ -344,8 +350,8 @@ class TkinterView:
         self.stats_text = tk.Text(
             stats_frame,
             height=8,
-            width=30,
-            font=('Courier', 9),
+            width=25,
+            font=('Courier', 11),
             wrap=tk.WORD,
             state=tk.DISABLED
         )
@@ -376,8 +382,8 @@ class TkinterView:
         self.log_text = tk.Text(
             log_frame,
             height=10,
-            width=30,
-            font=('Courier', 8),
+            width=25,
+            font=('Courier', 11),
             wrap=tk.WORD,
             yscrollcommand=log_scroll.set,
             state=tk.DISABLED
