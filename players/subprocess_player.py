@@ -10,7 +10,7 @@ import threading
 from typing import Optional, Tuple, List, Union
 from engine.board import HexBoard
 from engine.protocol import Protocol, ProtocolError
-from engine.constants import Color
+from engine.constants import Color, DEFAULT_TIMEOUT
 from .base import Player
 
 
@@ -28,16 +28,14 @@ class SubprocessPlayer(Player):
     - Automatic cleanup
     """
 
-    DEFAULT_TIMEOUT = 5.0  # seconds
-    DEFAULT_MEMORY_LIMIT_MB = 512.0  # MB
-
     def __init__(self,
                  color: Color,
                  program_path: str,
                  args: Optional[List[str]] = None,
                  timeout: float = DEFAULT_TIMEOUT,
                  memory_limit_mb: Optional[float] = None,
-                 name: Optional[str] = None):
+                 name: Optional[str] = None,
+                 stderr_callback=None):
         """
         Initialize subprocess player.
 
@@ -48,6 +46,7 @@ class SubprocessPlayer(Player):
             timeout: Timeout in seconds for each move
             memory_limit_mb: Memory limit in MB (None for no limit)
             name: Display name (defaults to program name)
+            stderr_callback: Optional callback function(message: str) for stderr output
         """
         # Generate name from program
         if name is None:
@@ -70,6 +69,11 @@ class SubprocessPlayer(Player):
 
         # Error tracking for detailed logging
         self.last_error_reason = None
+
+        # Stderr handling
+        self.stderr_callback = stderr_callback
+        self.stderr_thread = None
+        self.stderr_running = False
 
     def initialize(self, board_size: int) -> bool:
         """
@@ -101,6 +105,13 @@ class SubprocessPlayer(Player):
                 stderr_output = self._get_stderr()
                 print(f"Subprocess failed to start: {stderr_output}")
                 return False
+
+            # Start stderr monitoring thread
+            if self.stderr_callback:
+                self.stderr_running = True
+                self.stderr_thread = threading.Thread(
+                    target=self._monitor_stderr, daemon=True)
+                self.stderr_thread.start()
 
             return True
 
@@ -194,26 +205,29 @@ class SubprocessPlayer(Player):
             return None
 
     def cleanup(self):
-        """Clean up subprocess."""
-        if self.process:
-            try:
-                # Try graceful termination
-                self.process.terminate()
-
-                # Wait briefly for termination
+        """Clean up subprocess."""        # Stop stderr monitoring thread
+        self.stderr_running = False
+        if self.stderr_thread and self.stderr_thread.is_alive():
+            self.stderr_thread.join(timeout=0.5)
+            if self.process:
                 try:
-                    self.process.wait(timeout=2.0)
-                except subprocess.TimeoutExpired:
-                    # Force kill if didn't terminate
-                    self.process.kill()
-                    self.process.wait()
+                    # Try graceful termination
+                    self.process.terminate()
 
-            except Exception:
-                # Force kill on any error
-                try:
-                    self.process.kill()
-                except:
-                    pass
+                    # Wait briefly for termination
+                    try:
+                        self.process.wait(timeout=2.0)
+                    except subprocess.TimeoutExpired:
+                        # Force kill if didn't terminate
+                        self.process.kill()
+                        self.process.wait()
+
+                except Exception:
+                    # Force kill on any error
+                    try:
+                        self.process.kill()
+                    except:
+                        pass
 
     def _is_dead(self) -> bool:
         """Check if subprocess has died."""
@@ -312,6 +326,24 @@ class SubprocessPlayer(Player):
             return None
 
         return result[0]
+
+    def _monitor_stderr(self):
+        """Monitor stderr output in background thread and call callback."""
+        if not self.process or not self.process.stderr:
+            return
+
+        try:
+            while self.stderr_running and not self._is_dead():
+                line = self.process.stderr.readline()
+                if line:
+                    # Remove trailing newline and call callback
+                    message = line.rstrip('\n')
+                    if message and self.stderr_callback:
+                        self.stderr_callback(f"[{self.name}] {message}")
+                elif self._is_dead():
+                    break
+        except Exception:
+            pass
 
     def _get_stderr(self) -> str:
         """Get accumulated stderr output."""

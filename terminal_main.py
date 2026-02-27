@@ -111,7 +111,7 @@ Examples:
     return parser.parse_args()
 
 
-def create_player(color: Color, name: str, subprocess_cmd: Optional[str], timeout: float, memory_limit_mb: Optional[float]):
+def create_player(color: Color, name: str, subprocess_cmd: Optional[str], timeout: float, memory_limit_mb: Optional[float], stderr_callback=None):
     """
     Create a player (either Terminal or Subprocess).
 
@@ -121,6 +121,7 @@ def create_player(color: Color, name: str, subprocess_cmd: Optional[str], timeou
         subprocess_cmd: Command to run subprocess (None for terminal player)
         timeout: Timeout for subprocess players
         memory_limit_mb: Memory limit in MB for subprocess players
+        stderr_callback: Optional callback for stderr output
 
     Returns:
         Player instance
@@ -138,7 +139,8 @@ def create_player(color: Color, name: str, subprocess_cmd: Optional[str], timeou
             args=args,
             timeout=timeout,
             memory_limit_mb=memory_limit_mb,
-            name=name
+            name=name,
+            stderr_callback=stderr_callback
         )
         return player
     else:
@@ -152,7 +154,8 @@ def main():
 
     # Validate board size
     if args.board_size < MIN_BOARD_SIZE or args.board_size > MAX_BOARD_SIZE:
-        print(f"Error: Board size must be between {MIN_BOARD_SIZE} and {MAX_BOARD_SIZE}")
+        print(
+            f"Error: Board size must be between {MIN_BOARD_SIZE} and {MAX_BOARD_SIZE}")
         sys.exit(1)
 
     print("=" * 70)
@@ -163,20 +166,27 @@ def main():
     # Create game controller
     game = GameController(board_size=args.board_size)
 
+    # Define stderr callback for subprocess players
+    def stderr_callback(message: str):
+        from engine.game import LogLevel
+        game.log_event(LogLevel.INFO, message)
+
     # Create players (terminal or subprocess based on arguments)
     red_player = create_player(
         Color.RED,
         args.red_name,
         args.red_subprocess,
         args.timeout,
-        args.memory_limit
+        args.memory_limit,
+        stderr_callback=stderr_callback
     )
     blue_player = create_player(
         Color.BLUE,
         args.blue_name,
         args.blue_subprocess,
         args.timeout,
-        args.memory_limit
+        args.memory_limit,
+        stderr_callback=stderr_callback
     )
 
     # Track if we have subprocess players for cleanup

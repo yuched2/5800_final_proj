@@ -86,17 +86,17 @@ Examples:
     return parser.parse_args()
 
 
-def main():
-    """Main entry point for GUI game."""
-    args = parse_arguments()
-
-    # Validate board size
-    if args.board_size < MIN_BOARD_SIZE or args.board_size > MAX_BOARD_SIZE:
-        print(f"Error: Board size must be between {MIN_BOARD_SIZE} and {MAX_BOARD_SIZE}")
-        sys.exit(1)
+def run_game(args, view=None, is_first_run=True):
+    """Run a game with given arguments."""
+    # If view is provided, we're replaying; otherwise create new view
 
     # Create game controller
     game = GameController(board_size=args.board_size)
+
+    # Define stderr callback for subprocess players
+    def stderr_callback(message: str):
+        from engine.game import LogLevel
+        game.log_event(LogLevel.INFO, message)
 
     # Create players based on arguments
     if args.red_subprocess:
@@ -110,7 +110,8 @@ def main():
             args=prog_args,
             timeout=args.timeout,
             memory_limit_mb=args.memory_limit,
-            name=args.red_name
+            name=args.red_name,
+            stderr_callback=stderr_callback
         )
     else:
         red_player = GUIPlayer(Color.RED, args.red_name)
@@ -126,7 +127,8 @@ def main():
             args=prog_args,
             timeout=args.timeout,
             memory_limit_mb=args.memory_limit,
-            name=args.blue_name
+            name=args.blue_name,
+            stderr_callback=stderr_callback
         )
     else:
         blue_player = GUIPlayer(Color.BLUE, args.blue_name)
@@ -138,9 +140,13 @@ def main():
     if isinstance(blue_player, SubprocessPlayer):
         subprocess_players.append(blue_player)
 
-    # Create view
-    view = TkinterView(game)
-    view.setup_window()
+    # Create view if not provided (first run)
+    if view is None:
+        view = TkinterView(game)
+        view.setup_window()
+    else:
+        # Reuse existing view, update controller
+        view.controller = game
 
     # Initialize subprocess players if any
     if subprocess_players:
@@ -168,6 +174,19 @@ def main():
                 current_player.set_move(row_or_move)
 
     view.set_click_callback(handle_click)
+
+    # Set replay callback
+    def replay_game():
+        """Replay the game with same settings."""
+        # Cleanup current subprocess players
+        for player in subprocess_players:
+            player.cleanup()
+        # Clear the list
+        subprocess_players.clear()
+        # Restart game
+        run_game(args, view, is_first_run=False)
+
+    view.set_replay_callback(replay_game)
 
     # Start game
     view.display_game_start()
@@ -241,18 +260,34 @@ def main():
         # Start game loop
         view.root.after(100, game_loop)
 
-        # Run tkinter event loop
-        view.run()
+        # Run tkinter event loop (only on first run)
+        if is_first_run:
+            view.run()
 
     finally:
-        # Cleanup subprocess players
-        if subprocess_players:
+        # Cleanup subprocess players (only on first run/exit)
+        if is_first_run and subprocess_players:
             print("\nCleaning up subprocess players...")
             for player in subprocess_players:
                 player.cleanup()
             print("✓ Cleanup complete")
 
-    print("\nThank you for playing!")
+    if is_first_run:
+        print("\nThank you for playing!")
+
+
+def main():
+    """Main entry point for GUI game."""
+    args = parse_arguments()
+
+    # Validate board size
+    if args.board_size < MIN_BOARD_SIZE or args.board_size > MAX_BOARD_SIZE:
+        print(
+            f"Error: Board size must be between {MIN_BOARD_SIZE} and {MAX_BOARD_SIZE}")
+        sys.exit(1)
+
+    # Run the game
+    run_game(args)
 
 
 if __name__ == "__main__":

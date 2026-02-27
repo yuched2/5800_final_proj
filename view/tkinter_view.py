@@ -248,9 +248,12 @@ class TkinterView:
         self.stats_text = None
         self.log_text = None
         self.swap_button = None
+        self.replay_button = None
 
         # Click callback for GUI players
         self.click_callback = None
+        # Replay callback
+        self.replay_callback = None
 
         self.show_log = True
         self.show_stats = True
@@ -370,6 +373,14 @@ class TkinterView:
         )
         self.swap_button.pack(fill=tk.X, pady=2)
 
+        self.replay_button = ttk.Button(
+            controls_frame,
+            text="Replay Game",
+            command=self.on_replay_button,
+            state=tk.NORMAL
+        )
+        self.replay_button.pack(fill=tk.X, pady=2)
+
         # Event log
         log_frame = ttk.LabelFrame(info_frame, text="Event Log", padding="5")
         log_frame.grid(row=3, column=0, sticky=(
@@ -394,6 +405,13 @@ class TkinterView:
     def set_click_callback(self, callback):
         """Set callback for cell clicks (used by GUI players)."""
         self.click_callback = callback
+
+    def set_replay_callback(self, callback):
+        """Set callback for replay button."""
+        self.replay_callback = callback
+        if self.replay_button:
+            # Enable replay button if callback is set
+            pass  # Will be enabled after game ends
 
     def _on_canvas_resize(self):
         """Handle canvas resize - redraw board with new dimensions."""
@@ -563,6 +581,27 @@ class TkinterView:
 
         if self.status_label:
             self.status_label.config(text=f"Game Over: {winner_text}")
+
+    def on_replay_button(self):
+        """Handle replay button click."""
+        if not self.replay_callback:
+            messagebox.showinfo(
+                "Replay Not Available",
+                "Replay functionality is not configured.")
+            return
+
+        # Check if game is ongoing
+        if self.controller.winner is None and self.controller.current_turn > 0:
+            # Game is in progress, ask for confirmation
+            result = messagebox.askyesno(
+                "Replay Confirmation",
+                "The game is still in progress. Are you sure you want to restart?"
+            )
+            if not result:
+                return
+
+        # Proceed with replay
+        self.replay_callback()
 
     def on_swap_button(self):
         """Handle swap button click."""

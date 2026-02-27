@@ -57,7 +57,7 @@ MAX_BOARD_SIZE = 26
 
 # Subprocess player defaults
 DEFAULT_TIMEOUT = 1.0  # seconds per move
-DEFAULT_MEMORY_LIMIT = 32  # MB
+DEFAULT_MEMORY_LIMIT = 128  # MB
 
 # Hex directions (6 neighbors in hex grid)
 # For coordinate system where row increases down, col increases right

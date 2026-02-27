@@ -17,7 +17,7 @@ That's it! No need to track state, handle errors, or manage game flow.
 
 import sys
 import random
-import time
+from turtle import pos
 
 
 def parse_board(line):
@@ -90,9 +90,6 @@ def main():
 
             # Choose your move
             row, col = choose_move(size, my_color, board)
-
-            # # test timeout
-            time.sleep(7)
 
             # Output your move
             print(f"{row} {col}")
