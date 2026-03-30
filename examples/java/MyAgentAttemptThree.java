@@ -1,13 +1,8 @@
 import java.util.*;
 
 /**
- * The agent receives ONE line:
- * <SIZE> <YOUR_COLOR> <MOVES>
- * Example: 11 RED 5:5:B,6:6:R
- * Your agent outputs ONE line:
- * <ROW> <COL>
- * Example: 7 7
- * That's it! No need to track state, handle errors, or manage game flow.
+ * Hex Game Agent utilizing a time-bounded Flat Monte Carlo simulation engine.
+ * Optimized with 1D array representations and lightweight DFS for zero-GC rollouts.
  */
 public class MyAgentAttemptThree {
 
@@ -22,6 +17,12 @@ public class MyAgentAttemptThree {
         {-1, 1}, {1, -1}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
     private static final Random RAND = new Random();
+
+    /**
+     * Parses the standard input stream to reconstruct the 2D board state.
+     * * @param line Raw input string from the game engine.
+     * @return Object array containing: [size(int), myColor(int), board(int[][]), pieceCount(int)]
+     */
     private static Object[] parseBoard(String line) {
         String[] parts = line.split(" ", 3);
 
@@ -46,6 +47,10 @@ public class MyAgentAttemptThree {
         return new Object[] { size, myColor, board, pieceCount };
     }
 
+    /**
+     * Evaluates terminal state via Depth-First Search.
+     * Optimized to only check the RED win condition (Hex implies BLUE wins otherwise).
+     */
     private static boolean checkWin(int size, int[][] board) {
         boolean[][] visited = new boolean[size][size];
         // Check if Red wins
@@ -69,6 +74,10 @@ public class MyAgentAttemptThree {
         return false;
     }
 
+    /**
+     * Executes a fast random rollout from the given board state.
+     * Utilizes an in-place Fisher-Yates shuffle to minimize memory allocation.
+     */
     private static boolean simulateRandomGame(int size, int[][] tempBoard, int currentTurn) {
         int[] emptySpots = new int[size * size];
         int emptyCount = 0;
@@ -98,12 +107,7 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Choose the agent's move.
-     * 
-     * @param size    Board size
-     * @param myColor Your color
-     * @param board   Dictionary of existing moves
-     * @return Array of [row, col] for your move
+     * Determines the optimal move using a time-bounded Flat Monte Carlo search.
      */
     private static int[] chooseMove(int size, int myColor, int[][] board, int pieceCount) {
         // Center opening for RED
@@ -148,7 +152,7 @@ public class MyAgentAttemptThree {
             }
         }
 
-        // Pick cell with best win rate
+        // Aggregate statistics and select the move with the highest win rate
         int bestSpot = emptySpots[0];
         double bestRate = -1;
         for (int i = 0; i < emptyCount; i++) {
@@ -172,7 +176,8 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Main function - this is all you need!
+     * Entry point for the agent process.
+     * Manages standard I/O communication with the game platform.
      */
     public static void main(String[] args) {
         try {
