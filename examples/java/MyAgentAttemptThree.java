@@ -93,7 +93,7 @@ public class MyAgentAttemptThree {
         return false;
     }
 
-    private static boolean simulateRandomGame(int size, int[][] tempBoard, String currentTurn) {
+    private static boolean simulateRandomGame(int size, int[][] tempBoard, int currentTurn) {
         int[] emptySpots = new int[size * size];
         int emptyCount = 0;
 
