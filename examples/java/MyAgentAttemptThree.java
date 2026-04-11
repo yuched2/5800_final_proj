@@ -48,8 +48,7 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Evaluates terminal state via Depth-First Search.
-     * Optimized to only check the RED win condition (Hex implies BLUE wins otherwise).
+     * Evaluates terminal state via Depth-First Search using a Zero-GC version.
      */
     private static boolean checkWin(int size, int[][] board, boolean[][] visited) {
         // Reset visited array
