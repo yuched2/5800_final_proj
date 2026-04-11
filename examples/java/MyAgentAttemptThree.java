@@ -141,6 +141,10 @@ public class MyAgentAttemptThree {
         int[] wins = new int[emptyCount];
         int[] visits = new int[emptyCount];
 
+        int[][] tempBoard = new int[size][size];
+        int[] rolloutEmptySpots = new int[size * size];
+        boolean[][] visited = new boolean[size][size];
+
         while (System.currentTimeMillis() - startTime < timeLimit) {
             for (int i = 0; i < emptyCount; i++) {
                 int spot = emptySpots[i];
@@ -150,14 +154,20 @@ public class MyAgentAttemptThree {
                 board[r][c] = myColor;
                 int nextTurn = (myColor == RED) ? BLUE : RED;
 
-                int[][] tempBoard = copyBoard(board, size);
-                boolean redWon = simulateRandomGame(size, tempBoard, nextTurn);
+                // Fast array copy without creating new object
+                for (int row = 0; row < size; row++) {
+                    System.arraycopy(board[row], 0, tempBoard[row], 0, size);
+                }
+
+                // Run Zero-GC simulation
+                boolean redWon = simulateRandomGame(size, tempBoard, nextTurn, rolloutEmptySpots, visited);
 
                 if ((myColor == RED && redWon) || (myColor == BLUE && !redWon)) {
                     wins[i]++;
                 }
                 visits[i]++;
 
+                // Revert move
                 board[r][c] = EMPTY;
             }
         }
