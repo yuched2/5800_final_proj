@@ -1,15 +1,14 @@
 import java.util.*;
 
 /**
- * Hex Game Agent utilizing a time-bounded Flat Monte Carlo simulation engine.
- * Optimized with 1D array representations and lightweight DFS for zero-GC rollouts.
+ * ============================================================================
+ * CS 5800 Final Project: Hex Game AI Agent
+ * ============================================================================
+ * Architecture: Time-Bounded Flat Monte Carlo Search
+ * Key Optimizations: Zero-GC Rollouts, Asymmetric DFS, Intelligent Swap Rule
+ * ============================================================================
  */
 public class MyAgentAttemptThree {
-
-    /**
-     * Parse the board state from input line.
-     * Return Object array: [size(int), myColor(String), board(Map)]
-     */
     private static final int EMPTY = 0;
     private static final int RED = 1;
     private static final int BLUE = 2;
@@ -19,9 +18,11 @@ public class MyAgentAttemptThree {
     private static final Random RAND = new Random();
 
     /**
-     * Parses the standard input stream to reconstruct the 2D board state.
-     * * @param line Raw input string from the game engine.
-     * @return Object array containing: [size(int), myColor(int), board(int[][]), pieceCount(int)]
+     * Parses the standard input stream from the game engine to reconstruct the board state.
+     * Extracts the board dimensions, player color, and populates the 2D array with existing moves.
+     *
+     * @param line The raw protocol string (e.g., "11 BLUE 5:5:R,6:6:B").
+     * @return An Object array containing: [size (int), myColor (int), board (int[][]), pieceCount (int)].
      */
     private static Object[] parseBoard(String line) {
         String[] parts = line.split(" ", 3);
@@ -32,7 +33,7 @@ public class MyAgentAttemptThree {
         int [][]board = new int[size][size];
         int pieceCount = 0;
 
-        // Parse existing moves
+        // Parse existing moves if they exist
         if (parts.length == 3 && !parts[2].isEmpty()) {
             String[] movesStr = parts[2].split(",");
             for (String move : movesStr) {
@@ -48,7 +49,15 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Evaluates terminal state via Depth-First Search using a Zero-GC version.
+     * Evaluates the terminal state of the board.
+     * Optimization: Due to the mathematical properties of Hex, there will be no draws,
+     * this method only verifies if RED has formed a top-to-bottom connection.
+     * If RED has not won on a fully populated board, BLUE wins.
+     *
+     * @param size    The dimension of the board.
+     * @param board   The current simulation board state.
+     * @param visited Pre-allocated boolean array to track visited nodes (Zero-GC).
+     * @return True if RED wins, False if BLUE wins.
      */
     private static boolean checkWin(int size, int[][] board, boolean[][] visited) {
         // Reset visited array
@@ -64,6 +73,16 @@ public class MyAgentAttemptThree {
         return false;
     }
 
+    /**
+     * Recursive Depth-First Search (DFS) helper to trace continuous paths of stones.
+     * @param r       Current row index.
+     * @param c       Current column index.
+     * @param color   The color of the stone being traced (RED).
+     * @param size    The dimension of the board.
+     * @param board   The current simulation board state.
+     * @param visited Pre-allocated boolean array to prevent cyclic loops.
+     * @return True if a path successfully reaches the bottom edge (row == size - 1).
+     */
     private static boolean dfs(int r, int c, int color, int size, int[][] board, boolean[][] visited) {
         if (r == size - 1) return true;
         visited[r][c] = true;
@@ -77,8 +96,14 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Executes a fast random rollout from the given board state.
-     * Utilizes an in-place Fisher-Yates shuffle to minimize memory allocation.
+     * Conducts a single random rollout from the current board state until a terminal condition is met.
+     *
+     * @param size         The dimension of the board.
+     * @param tempBoard    Pre-allocated board array specifically for this simulation.
+     * @param currentTurn  The color of the player who makes the next random move.
+     * @param emptySpots   Pre-allocated 1D array to track available coordinates.
+     * @param visited      Pre-allocated boolean array for DFS win evaluation.
+     * @return True if RED wins the rollout, False if BLUE wins.
      */
     private static boolean simulateRandomGame(int size, int[][] tempBoard, int currentTurn, int[] emptySpots, boolean[][] visited) {
         int emptyCount = 0;
@@ -99,6 +124,7 @@ public class MyAgentAttemptThree {
             emptySpots[j] = temp;
         }
 
+        // Execute randomized moves
         int turn = currentTurn;
         for (int i = 0; i < emptyCount; i++) {
             int spot = emptySpots[i];
@@ -109,7 +135,15 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Determines the optimal move using a time-bounded Flat Monte Carlo search.
+     * The core Time-Bounded Flat Monte Carlo Search decision engine.
+     * Iterates over all legal moves, running repeated simulations for each until the strict
+     * time limit is approached. Selects the move with the highest empirical win rate.
+     *
+     * @param size       The dimension of the board.
+     * @param myColor    The agent's assigned color.
+     * @param board      The actual game board state.
+     * @param pieceCount The number of stones currently on the board.
+     * @return An integer array [row, col] representing the optimal chosen move.
      */
     private static int[] chooseMove(int size, int myColor, int[][] board, int pieceCount) {
         // Center opening for RED
@@ -126,6 +160,7 @@ public class MyAgentAttemptThree {
             }
         }
 
+        // Time constraint satisfaction
         long startTime = System.currentTimeMillis();
         long timeLimit = 900;
         if(size <= 11) {
@@ -145,12 +180,12 @@ public class MyAgentAttemptThree {
         int[] rolloutEmptySpots = new int[size * size];
         boolean[][] visited = new boolean[size][size];
 
+        // Flat Monte Carlo rollouts execution
         while (System.currentTimeMillis() - startTime < timeLimit) {
             for (int i = 0; i < emptyCount; i++) {
                 int spot = emptySpots[i];
                 int r = spot / size;
                 int c = spot % size;
-
                 board[r][c] = myColor;
                 int nextTurn = (myColor == RED) ? BLUE : RED;
 
@@ -164,11 +199,11 @@ public class MyAgentAttemptThree {
                     wins[i]++;
                 }
                 visits[i]++;
-
                 board[r][c] = EMPTY;
             }
         }
 
+        // Aggregate results and locate the most robust move
         int bestSpot = emptySpots[0];
         double bestRate = -1;
         for (int i = 0; i < emptyCount; i++) {
@@ -184,7 +219,13 @@ public class MyAgentAttemptThree {
     }
 
     /**
-     * Implemented Swap logic: Swap if RED's first move is near the center.
+     * Strategic evaluation logic for the First-Turn Swap Rule.
+     * Avoids blindly swapping if near the edges.
+     * Only invokes the swap rule if RED's opening is in the central strategic zone.
+     *
+     * @param size  The dimension of the board.
+     * @param board The current game board.
+     * @return True if BLUE should steal RED's move, False to play normally.
      */
     private static boolean shouldSwap(int size, int[][] board) {
         int redRow = -1, redCol = -1;
@@ -200,25 +241,22 @@ public class MyAgentAttemptThree {
             }
         }
         if (redRow == -1) return false;
-
         int center = size / 2;
         int threshold = size / 4;
 
-        // Return true if RED played within the center threshold zone
         return Math.abs(redRow - center) <= threshold && Math.abs(redCol - center) <= threshold;
     }
 
     /**
      * Entry point for the agent process.
-     * Manages standard I/O communication with the game platform.
+     * Continuously reads state updates from stdin, computes optimal responses,
+     * and flushes coordinates to stdout as per the communication protocol.
      */
     public static void main(String[] args) {
         try {
-            // Use BufferedReader for better subprocess compatibility
             java.io.BufferedReader reader = new java.io.BufferedReader(
                     new java.io.InputStreamReader(System.in));
 
-            // Loop version - handles multiple moves
             String line;
             while ((line = reader.readLine()) != null) {
                 Object[] parsed = parseBoard(line);
@@ -227,7 +265,7 @@ public class MyAgentAttemptThree {
                 int[][] board = (int[][]) parsed[2];
                 int pieceCount = (int) parsed[3];
 
-                // Update swap rule
+                // Phase 1: Evaluate the Swap Rule condition
                 if (myColor == BLUE && pieceCount == 1) {
                     if (shouldSwap(size, board)) {
                         System.out.println("swap");
@@ -237,8 +275,9 @@ public class MyAgentAttemptThree {
                         System.err.println("Error found");
                     }
                 }
-                int[] move = chooseMove(size, myColor, board, pieceCount);
 
+                // Phase 2: Compute and transmit the optimal move
+                int[] move = chooseMove(size, myColor, board, pieceCount);
                 System.out.println(move[0] + " " + move[1]);
                 System.out.flush();
             }
@@ -246,7 +285,7 @@ public class MyAgentAttemptThree {
             reader.close();
 
         } catch (Exception e) {
-            System.err.println("[ERROR] Exception occurred: " + e.getMessage());
+            System.err.println("Exception occurred: " + e.getMessage());
             e.printStackTrace(System.err);
             System.exit(1);
         }
