@@ -51,8 +51,11 @@ public class MyAgentAttemptThree {
      * Evaluates terminal state via Depth-First Search.
      * Optimized to only check the RED win condition (Hex implies BLUE wins otherwise).
      */
-    private static boolean checkWin(int size, int[][] board) {
-        boolean[][] visited = new boolean[size][size];
+    private static boolean checkWin(int size, int[][] board, boolean[][] visited) {
+        // Reset visited array
+        for (int i = 0; i < size; i++) {
+            Arrays.fill(visited[i], false);
+        }
         // Check if Red wins
         for (int c = 0; c < size; c++) {
             if (board[0][c] == RED && !visited[0][c]) {
@@ -125,7 +128,16 @@ public class MyAgentAttemptThree {
         }
 
         long startTime = System.currentTimeMillis();
-        long timeLimit = 120;
+        long timeLimit = 900;
+        if(size <= 11) {
+            timeLimit = 135;
+        } else if(size <= 15) {
+            timeLimit = 185;
+        } else if(size <= 19) {
+            timeLimit = 230;
+        } else if(size <= 21) {
+            timeLimit = 280;
+        }
 
         int[] wins = new int[emptyCount];
         int[] visits = new int[emptyCount];
