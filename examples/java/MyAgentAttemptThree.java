@@ -2,7 +2,8 @@ import java.util.*;
 
 /**
  * ============================================================================
- * CS 5800 Final Project: Hex Game AI Agent
+ * CS 5800 Final Project: MVP Submission
+ * Author: Abdullah Tariq, Chendong Yu
  * ============================================================================
  * Architecture: Time-Bounded Flat Monte Carlo Search
  * Key Optimizations: Zero-GC Rollouts, Asymmetric DFS, Intelligent Swap Rule
