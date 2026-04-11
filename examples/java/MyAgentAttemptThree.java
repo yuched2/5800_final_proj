@@ -80,8 +80,7 @@ public class MyAgentAttemptThree {
      * Executes a fast random rollout from the given board state.
      * Utilizes an in-place Fisher-Yates shuffle to minimize memory allocation.
      */
-    private static boolean simulateRandomGame(int size, int[][] tempBoard, int currentTurn) {
-        int[] emptySpots = new int[size * size];
+    private static boolean simulateRandomGame(int size, int[][] tempBoard, int currentTurn, int[] emptySpots, boolean[][] visited) {
         int emptyCount = 0;
 
         for (int r = 0; r < size; r++) {
@@ -92,6 +91,7 @@ public class MyAgentAttemptThree {
             }
         }
 
+        // In-place Fisher-Yates shuffle
         for (int i = emptyCount - 1; i > 0; i--) {
             int j = RAND.nextInt(i + 1);
             int temp = emptySpots[i];
@@ -105,7 +105,7 @@ public class MyAgentAttemptThree {
             tempBoard[spot / size][spot % size] = turn;
             turn = (turn == RED) ? BLUE : RED;
         }
-        return checkWin(size, tempBoard);
+        return checkWin(size, tempBoard, visited);
     }
 
     /**
