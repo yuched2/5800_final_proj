@@ -237,11 +237,8 @@ public class MyAgentAttemptThree {
                         System.err.println("Error found");
                     }
                 }
-
-                // Choose the move
                 int[] move = chooseMove(size, myColor, board, pieceCount);
 
-                // Output the move
                 System.out.println(move[0] + " " + move[1]);
                 System.out.flush();
             }
