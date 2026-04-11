@@ -9,7 +9,7 @@ import java.util.*;
  * Key Optimizations: Zero-GC Rollouts, Asymmetric DFS, Intelligent Swap Rule
  * ============================================================================
  */
-public class MyAgentAttemptThree {
+public class MvpAgent {
     private static final int EMPTY = 0;
     private static final int RED = 1;
     private static final int BLUE = 2;
@@ -165,13 +165,13 @@ public class MyAgentAttemptThree {
         long startTime = System.currentTimeMillis();
         long timeLimit = 900;
         if(size <= 11) {
-            timeLimit = 135;
+            timeLimit = 130;
         } else if(size <= 15) {
-            timeLimit = 185;
+            timeLimit = 180;
         } else if(size <= 19) {
-            timeLimit = 230;
+            timeLimit = 225;
         } else if(size <= 21) {
-            timeLimit = 280;
+            timeLimit = 275;
         }
 
         int[] wins = new int[emptyCount];
