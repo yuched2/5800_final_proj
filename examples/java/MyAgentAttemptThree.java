@@ -154,12 +154,10 @@ public class MyAgentAttemptThree {
                 board[r][c] = myColor;
                 int nextTurn = (myColor == RED) ? BLUE : RED;
 
-                // Fast array copy without creating new object
                 for (int row = 0; row < size; row++) {
                     System.arraycopy(board[row], 0, tempBoard[row], 0, size);
                 }
 
-                // Run Zero-GC simulation
                 boolean redWon = simulateRandomGame(size, tempBoard, nextTurn, rolloutEmptySpots, visited);
 
                 if ((myColor == RED && redWon) || (myColor == BLUE && !redWon)) {
@@ -167,12 +165,10 @@ public class MyAgentAttemptThree {
                 }
                 visits[i]++;
 
-                // Revert move
                 board[r][c] = EMPTY;
             }
         }
 
-        // Aggregate statistics and select the move with the highest win rate
         int bestSpot = emptySpots[0];
         double bestRate = -1;
         for (int i = 0; i < emptyCount; i++) {
@@ -187,12 +183,29 @@ public class MyAgentAttemptThree {
         return new int[] { bestSpot / size, bestSpot % size };
     }
 
-    private static int[][] copyBoard(int[][] original, int size) {
-        int[][] copy = new int[size][size];
+    /**
+     * Implemented Swap logic: Swap if RED's first move is near the center.
+     */
+    private static boolean shouldSwap(int size, int[][] board) {
+        int redRow = -1, redCol = -1;
+
+        // Locate RED's first and only move
         for (int r = 0; r < size; r++) {
-            System.arraycopy(original[r], 0, copy[r], 0, size);
+            for (int c = 0; c < size; c++) {
+                if (board[r][c] == RED) {
+                    redRow = r;
+                    redCol = c;
+                    break;
+                }
+            }
         }
-        return copy;
+        if (redRow == -1) return false;
+
+        int center = size / 2;
+        int threshold = size / 4;
+
+        // Return true if RED played within the center threshold zone
+        return Math.abs(redRow - center) <= threshold && Math.abs(redCol - center) <= threshold;
     }
 
     /**
@@ -214,17 +227,21 @@ public class MyAgentAttemptThree {
                 int[][] board = (int[][]) parsed[2];
                 int pieceCount = (int) parsed[3];
 
-                // Update swap rule (int ver.)
+                // Update swap rule
                 if (myColor == BLUE && pieceCount == 1) {
-                    System.out.println("swap");
-                    System.out.flush();
-                    continue;
+                    if (shouldSwap(size, board)) {
+                        System.out.println("swap");
+                        System.out.flush();
+                        continue;
+                    } else {
+                        System.err.println("Error found");
+                    }
                 }
 
-                // Choose your move
+                // Choose the move
                 int[] move = chooseMove(size, myColor, board, pieceCount);
 
-                // Output your move (don't forget to flush!)
+                // Output the move
                 System.out.println(move[0] + " " + move[1]);
                 System.out.flush();
             }
